@@ -15,6 +15,7 @@
 <refsynopsisdiv>
  <cmdsynopsis>
   <command>rsbak3</command>
+  <arg choice=opt>-v</arg>
   <arg choice=req><replaceable>config-file</replaceable></arg>
   <arg rep=repeat><replaceable>config-name</replaceable></arg>
  </cmdsynopsis>
