@@ -186,6 +186,9 @@ fi
 
 vecho "Running rsync (output redirected to logfile) ..."
 
+# vecho "rsync '$master' '$this.new' --archive -v --stats" \
+#       "--delete-excluded --ignore-errors --delete $rsopt"
+
 if ! eval 'rsync "$master" "$this.new" --archive -v --stats' \
 	'--delete-excluded --ignore-errors --delete' \
 	"$rsopt" > $this.log < /dev/null
