@@ -29,7 +29,7 @@ fi
 
 if [ -z "$DONT_SHOW_RSBAK3_COPY" ]; then
   vecho
-  vecho "RSBAK $ver is Copyright (C) 2003 LINBIT <http://www.linbit.com/>."
+  vecho "RSBAK3 $ver is Copyright (C) 2003 LINBIT <http://www.linbit.com/>."
   vecho "Written by Clifford Wolf <clifford@clifford.at>."
   vecho "This is free software with ABSOLUTELY NO WARRANTY."
   vecho
