@@ -340,7 +340,7 @@
     and use the key you've just created for authentication. Add the following
     to the rsbak3 configuration
     <programlisting>
-      rsh-command ssh -i /etc/rsbak3_key
+      rsh-command ssh -o BatchMode=yes -i /etc/rsbak3_key
     </programlisting>
     and make sure that you are not using the rsync protocol for connecting to
     the backed-up host (one colon between host and directory, no rsync://).
