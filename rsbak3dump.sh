@@ -20,7 +20,7 @@ if [ "$#" != "3" -o ! -d "$2" ]; then
 fi
 
 tm=$( date +'%Y%m%d-%H%M%S' )
-echo "Dumping new tuple $tm ..."
+# echo "Dumping new tuple $tm ..."
 mkdir -p "$2.tmp"
 eval "$1" | gzip --rsyncable > "$2.tmp/dump.gz"
 echo "$tm" > "$2.tmp/dump.tm"
@@ -29,12 +29,12 @@ deltarot=0
 [ -f $2/dump.gz -a $3 -gt 0 ] && deltarot=1
 
 if [ $deltarot = 1 ]; then
-	echo "Creating bi-directional deltas ..."
+	# echo "Creating bi-directional deltas ..."
 	xdelta delta -p "$2.tmp/dump.gz" "$2/dump.gz" "$2.tmp/$tm.bw_delta"
 	xdelta delta -p "$2/dump.gz" "$2.tmp/dump.gz" "$2.tmp/$tm.fw_delta"
 fi
 
-echo "Putting new dump in place ..."
+# echo "Putting new dump in place ..."
 if [ $deltarot = 1 ]; then
 	mv "$2.tmp/$tm.bw_delta" "$2/"
 	mv "$2.tmp/$tm.fw_delta" "$2/"
@@ -44,7 +44,7 @@ mv "$2.tmp/dump.tm" "$2/"
 rm -r "$2.tmp"
 
 if [ $deltarot = 1 ]; then
-	echo "Removing old deltas ..."
+	# echo "Removing old deltas ..."
 	ls -r "$2/"[0-9]*.bw_delta | tail -n +$(( $3 + 1 )) | xargs -r rm
 	ls -r "$2/"[0-9]*.fw_delta | tail -n +$(( $3 + 1 )) | xargs -r rm
 fi
