@@ -21,7 +21,11 @@ if [ -n "$RSBAK3_VERBOSE" ]; then
 	verbose=$RSBAK3_VERBOSE
 fi
 
-if [ $verbose = 1 ]; then
+errlog() {
+	logger -p user.crit -t "rsbak3" "$*"
+}
+
+if [ $verbose = 1 -o -z "$1" -o ! -f "$1" ]; then
 	vecho() { echo "$@"; }
 else
 	vecho() { :; }
@@ -170,12 +174,18 @@ if [ -z "$generations" ]; then
 	echo; exit 1
 fi
 
-cd "$backupdir"             || { echo "$2:$this: prepgen error #1"; echo; exit 1; }
-mkdir -p "$2/generation_0"  || { echo "$2:$this: prepgen error #2"; echo; exit 1; }
-cd "$2/generation_0"        || { echo "$2:$this: prepgen error #3"; echo; exit 1; }
+if ! cd "$backupdir" ||
+   ! mkdir -p "$2/generation_0" ||
+   ! cd "$2/generation_0"
+then
+	echo "$2:$this: Error while creating $backupdir/$2/generation_0"
+	errlog "$2:$this: Error while creating $backupdir/$2/generation_0"
+	echo; exit1
+fi
 
 if [ -f LOCKFILE ]; then
 	echo "Found lockfile $PWD/LOCKFILE:"
+	errlog "Found lockfile $PWD/LOCKFILE"
 	cat LOCKFILE; echo; exit 1
 fi
 
@@ -202,6 +212,7 @@ if ! eval 'rsync "$master" "$this.new" --archive -v --stats' \
 	"$rsopt" > $this.log < /dev/null
 then
 	echo "$2:$this: rsync returned an error, see $this.log:"
+	errlog "$2:$this: rsync returned an error, see $this.log:"
 	tail "$this.log"; echo; exit 1
 fi
 
