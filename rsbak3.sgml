@@ -367,6 +367,42 @@
 </refsect1>
 
 <refsect1>
+  <title>Backing up Databases</title>
+  <para>
+    Rsbak3 can also be used to back up databases using database dumps and
+    xdelta. This reuires xdelta and a gzip with support for the --rsyncable
+    option to be installed on the host beeing backed up. An additional small
+    shell script (rsbak3dump) is used on the host beeing backed up to create
+    and maintain a directory containing a current database dump and xdeltas
+    to earlier dumps. A cron-job must be set up to do this, somthing like:
+    <programlisting>
+	0 2 * * * mysql rsbak3dump 'mysqldump test' /var/backups/testdb 15
+    </programlisting>
+    The first parameter to rsbak3dump is the command which creates the
+    database dump as output. The 2nd parameter is the directory which should
+    contain the dumped data and the 3rd parameter is the number of xdeltas
+    which should be kept in the directory. Keep care that rsbak3dump has
+    finished before rsbak3 is backing up the directory!
+  </para>
+  <para>
+    The trick with rsbak3dump is that the directory which is beeing backed up
+    provides already some kind of 'history information' with the xdeltas stored
+    there. So there is no need to keep multiple 1st generation backups on the
+    backup server. Insted the top-level generation keeps only one concurrent
+    backup which contains the current dump and the xdeltas. So the generations
+    entry on the server for the dumps would look like:
+    <programlisting>
+	generations 1:7 4:0
+    </programlisting>
+    Since each 'snapshot' of the backup directory contains one compressed
+    database dump and xdeltas, it's possible to restore every state of the
+    database in the last month by taking one dump and applying the xdeltas
+    as necessary. Since there are forward- as well as backward-deltas, it
+    is always possible to restore every state from two different dumps.
+  </para>
+</refsect1>
+
+<refsect1>
   <title>Backup Filesystem Structure</title>
   <para>
     rsbak3 creates subdirectories for all backups using the name specified
@@ -402,6 +438,16 @@
 		`- host2
 			`- ...
     </programlisting>
+  </para>
+</refsect1>
+
+<refsect1>
+  <title>Analysing Backup Directories</title>
+  <para>
+    The additional tool rsbak3diff can be used to list the files which
+    have been modified, added or removed between two backups. This can be
+    very usefull to find out which part of the backup eats up all your
+    diskspace.
   </para>
 </refsect1>
 

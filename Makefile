@@ -4,7 +4,7 @@ all:
 	@echo " rsbak3 is a shell script. there is nothing to build."
 	@echo ""
 	@echo " $(MAKE) doc .......... create documentation (needs docbook)"
-	@echo " $(MAKE) install ...... install rsbak3"
+	@echo " $(MAKE) install ...... install rsbak3 and additional tools"
 	@echo ""
 
 doc:
@@ -15,10 +15,11 @@ doc:
 	rm -f manpage.*
 
 install:
-	install -m 755 rsbak3.sh  /usr/local/sbin/rsbak3
-	install -m 755 rsb3swr.sh /usr/local/sbin/rsb3swr
-	install -m 755 rsbak3diff.sh  /usr/local/sbin/rsbak3diff
-	-install -m 644 rsbak3.man /usr/local/man/man8/rsbak3.8
+	install  -m 755 rsbak3.sh     /usr/local/sbin/rsbak3
+	install  -m 755 rsb3swr.sh    /usr/local/sbin/rsb3swr
+	install  -m 755 rsbak3diff.sh /usr/local/sbin/rsbak3diff
+	install  -m 755 rsbak3dump.sh /usr/local/sbin/rsbak3dump
+	-install -m 644 rsbak3.man    /usr/local/man/man8/rsbak3.8
 
 clean:
 	rm -f manpage.* *~ core
