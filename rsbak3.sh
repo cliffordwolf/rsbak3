@@ -174,6 +174,14 @@ cd "$backupdir"             || { echo "$2:$this: prepgen error #1"; echo; exit 1
 mkdir -p "$2/generation_0"  || { echo "$2:$this: prepgen error #2"; echo; exit 1; }
 cd "$2/generation_0"        || { echo "$2:$this: prepgen error #3"; echo; exit 1; }
 
+if [ -f LOCKFILE ]; then
+	echo "Found lockfile $PWD/LOCKFILE:"
+	cat LOCKFILE; echo; exit 1
+fi
+
+echo "Already running with PID $$ [$0 $*]." > LOCKFILE
+trap "rm -f $PWD/LOCKFILE" EXIT
+
 last=$( ls -d [0-9]*.bak 2> /dev/null | tail -1 )
 
 rm -rf "$this.new"
