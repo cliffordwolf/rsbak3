@@ -202,7 +202,7 @@ for gen in 0 1 2 3 4 5 6 7 8 9; do
 	gencount="$( [ -s GENCOUNT ] && egrep '^[0-9]+$' GENCOUNT | head -1 )"
 	[ -z "$gencount" ] && gencount=$rot
 
-	for dir in $( ls -R -d [0-9]*.bak 2> /dev/null | tail +$num )
+	for dir in $( ls -r -d [0-9]*.bak 2> /dev/null | tail +$num )
 	do
 		(( gencount = $gencount + 1 ))
 		if [ $gencount -ge $rot -a $last -eq 0 ]; then
