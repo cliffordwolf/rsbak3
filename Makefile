@@ -17,6 +17,7 @@ doc:
 install:
 	install -m 755 rsbak3.sh  /usr/local/sbin/rsbak3
 	install -m 755 rsb3swr.sh /usr/local/sbin/rsb3swr
+	install -m 755 rsbak3diff.sh  /usr/local/sbin/rsbak3diff
 	-install -m 644 rsbak3.man /usr/local/man/man8/rsbak3.8
 
 clean:
