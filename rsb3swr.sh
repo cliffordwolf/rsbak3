@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# RSBAK3 is Copyright (C) 2003 LINBIT <http://www.linbit.com/>.
+# RSBAK3 is Copyright (C) 2003, 2004 LINBIT <http://www.linbit.com/>.
 #
 # Written by Clifford Wolf <clifford@clifford.at>.
 #

@@ -1,4 +1,14 @@
 #!/bin/bash
+#
+# RSBAK3 is Copyright (C) 2003, 2004 LINBIT <http://www.linbit.com/>.
+#
+# Written by Clifford Wolf <clifford@clifford.at>.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version. A copy of the GNU General Public
+# License can be found at COPYING.
 
 if [ ! -d "$1" -o ! -d "$2" ]; then
 	echo "Usage: $0 directory1 directory2"
