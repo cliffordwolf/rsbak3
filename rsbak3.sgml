@@ -382,7 +382,9 @@
     database dump as output. The 2nd parameter is the directory which should
     contain the dumped data and the 3rd parameter is the number of xdeltas
     which should be kept in the directory. Keep care that rsbak3dump has
-    finished before rsbak3 is backing up the directory!
+    finished before rsbak3 is backing up the directory! Just for the case that
+    rsbak3 is running simultaneous with rsbak3dump, it is reccomended to
+    exclude *.tmp in the rsbak3 configuration for the dump directory.
   </para>
   <para>
     The trick with rsbak3dump is that the directory which is beeing backed up

@@ -36,16 +36,16 @@ fi
 
 echo "Putting new dump in place ..."
 if [ $deltarot = 1 ]; then
-	mv -fv "$2.tmp/$tm.bw_delta" "$2/"
-	mv -fv "$2.tmp/$tm.fw_delta" "$2/"
+	mv "$2.tmp/$tm.bw_delta" "$2/"
+	mv "$2.tmp/$tm.fw_delta" "$2/"
 fi
-mv -fv "$2.tmp/dump.gz" "$2/"
-mv -fv "$2.tmp/dump.tm" "$2/"
-rm -rf "$2.tmp"
+mv "$2.tmp/dump.gz" "$2/"
+mv "$2.tmp/dump.tm" "$2/"
+rm -r "$2.tmp"
 
 if [ $deltarot = 1 ]; then
 	echo "Removing old deltas ..."
-	ls -r "$2/"[0-9]*.bw_delta | tail -n +$(( $3 + 1 )) | xargs -r rm -vf
-	ls -r "$2/"[0-9]*.fw_delta | tail -n +$(( $3 + 1 )) | xargs -r rm -vf
+	ls -r "$2/"[0-9]*.bw_delta | tail -n +$(( $3 + 1 )) | xargs -r rm
+	ls -r "$2/"[0-9]*.fw_delta | tail -n +$(( $3 + 1 )) | xargs -r rm
 fi
 
