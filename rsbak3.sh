@@ -207,9 +207,13 @@ vecho "Running rsync (output redirected to logfile) ..."
 # vecho "rsync '$master' '$this.new' --archive -v --stats" \
 #       "--delete-excluded --ignore-errors --delete $rsopt"
 
-if ! eval 'rsync "$master" "$this.new" --archive -v --stats' \
+eval 'rsync "$master" "$this.new" --archive -v --stats' \
 	'--delete-excluded --ignore-errors --delete' \
 	"$rsopt" > $this.log < /dev/null
+rsync_rc=$?
+
+# ignore error 24 = Partial transfer due to vanished source files
+if [ $rsync_rc != 0 -a $rsync_rc != 24 ]
 then
 	echo "$2:$this: rsync returned an error, see $this.log:"
 	errlog "$2:$this: rsync returned an error, see $this.log:"
