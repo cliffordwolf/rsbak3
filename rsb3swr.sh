@@ -28,7 +28,7 @@ fi
 # always start with "rsync --server --sender".
 
 if echo "$SSH_ORIGINAL_COMMAND" | \
-   egrep -v '^rsync --server --sender [a-zA-Z0-9/\._ -]*$'
+   egrep -v '^rsync --server --sender [a-zA-Z0-9/\._= -]*$'
 then
 	logger -p authpriv.warn -t rsb3swr \
 		"Deny starting rsync. Command doesn't match regex:" \
