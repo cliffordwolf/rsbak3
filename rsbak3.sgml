@@ -1,0 +1,477 @@
+<!DOCTYPE RefEntry PUBLIC "-//Davenport//DTD DocBook V3.0//EN">
+<refentry>
+<docinfo><date>10 Sep 2003</date></docinfo>
+
+<refmeta>
+ <refentrytitle>rsbak3</refentrytitle>
+ <manvolnum>8</manvolnum>
+</refmeta>
+ 
+<refnamediv>
+ <refname>rsbak3</refname>
+ <refpurpose>Rsync Backup (Version 3)</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+ <cmdsynopsis>
+  <command>rsbak3</command>
+  <arg choice=req><replaceable>config-file</replaceable></arg>
+  <arg rep=repeat><replaceable>config-name</replaceable></arg>
+ </cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+ <title>Introduction</title>
+ <para>
+   The rsbak3 command can be used to backup one host to another hosts
+   harddisc using rsync. In addition to just using rsync to keep two
+   filesystems in sync, rsbak3 is doing incremental backups and saves
+   multi-generational history data.
+ </para>
+ <para>
+   When rsync is syncing a file, it is re-creating the file under a 2nd
+   name and moving it over the original name - so it's "unlinking" hardlinks.
+   rsbak3 is taking advantage of this for making incremental backups: The
+   old backup is "link-copied" to a new location (see "cp -al") and then
+   this copy of the backup-tree is rsynced. So all files which have been
+   modified get unlinked an re-created and all files which have been removed
+   will get unlinked in the new tree - but everything which is left unmodified
+   will stay linked to the original backup and so doesn't need any additional
+   disc space.
+ </para>
+ <para>
+   Of course this does backup hardlinks on the original filesystem as seperate
+   files on the backup machine. rsbak3 needs to run as root if all the file
+   permissions should be backed up correctly. In this case I recommend making
+   the directory tree in which the backup is stored root-only accessable to
+   avoid troubles caused by different uid/gid schemas on the backup host and
+   the backed-up host.
+ </para>
+ <para>
+   It's reccommended to store the backups made with rsbak3 on a filesystem
+   which supports tail-merging small directories since the directories themself
+   can't be hardlinked but need to be copied for every history version.
+   Reiserfs is such a filesystem; ext2 isn't.
+ </para>
+ <para>
+   Making backups using rsbak3 is rather easy: A configuration file contains
+   the definitions (rsync urls, exclude/include rules, etc.) for one or more
+   filesystems which should be backed up. rsbak3 is taking the name of this
+   configuration file as first parameter. The second and all further
+   parameters (which are optional optional) can be used to specify which of
+   the filesystems in the configuration file should be backed up. Usually
+   rsbak3 is run from the system crontab and not executed manually.
+ </para>
+</refsect1>
+
+<refsect1>
+ <title>Configuration File</title>
+ <para>
+   An rsbak3 configuration file contains one or more sections about filesystems
+   which should be backed up. Those sections start with a line containing a
+   backup-name in brackets (spaces between the name and the brackets are
+   matadory). A section can match multiple backup-names usind the * wildcard
+   (e.g. host1/*). See this example /etc/rsbak3.conf file:
+   <programlisting>
+	[ * ]
+	backup-dir /mnt/rsbak3
+	generations 10:7 10:4 12:12
+
+	[ host1-* ]
+	password secret
+	compress
+	bwlimit 50
+	exclude *~
+
+	[ host1-system ]
+	master backup@host1.example.com::backup/
+	system-exclude
+	exclude home/**
+
+	[ host1-home ]
+	master backup@host1.example.com::backup/home/
+	exclude *.mp3
+	exclude *.ogg
+	exclude *.mpg
+	exclude *.mpeg
+	exclude *.avi
+	exclude *.wmv
+	exclude *.iso
+
+	[ host2 ]
+	master backup@host2.example.com::backup/
+	password secret
+	whole-file
+	include-tree /home/alice/**
+	include-tree /home/bob/**
+	include-tree /usr/local/**
+	include-tree /etc/**
+	include-tree /var/lib/www/**
+	exclude *
+   </programlisting>
+   So this example configuration describes 3 backups: host1/system,
+   host1/home and host2. The first section is used for all backups,
+   the 2nd section is used for host1/system and host1/home and the
+   last three sections are only used for one specific backup each.
+ </para>
+ <para>
+   For each backup there must be at least the following tags specified
+   in the configuration file: master, backupdir and generations.
+ </para>
+</refsect1>
+
+<refsect1>
+ <title>Configuration File Tags</title>
+ <variablelist>
+   <varlistentry>
+     <term>master</term>
+     <listitem><para>
+       This is the source for the backup. It can be any valid rsync
+       remote location. See rsync(1) for details.
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>backup-dir</term>
+     <listitem><para>
+       This is the local directory the backup is stored to. rsbak3 will create
+       sub-directories with the backup-names as stored in the configuration
+       file here and create the backups themself within those subdirectories.
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>generations</term>
+     <listitem><para>
+       This is the definition how many generations should be created, how
+       many backups they are holding each and how often a backup evolves to
+       the next generation. See the section about generations for details.
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>password</term>
+     <listitem><para>
+       The password which should be used when connecting using the rsync
+       protocol. This is not used when connecting using rsh, ssh or any other
+       remote shell. This tag will set the RSYNC_PASSWORD evironment variable
+       for the rsync process; see rsync(1) for details.
+     </para><para>
+       If you are using this configuration tag, the password will be stored
+       in the rsbak3 configuration file. This is a potential security risk.
+       Make your config file only readable by root if you are using this tag!
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>password-file</term>
+     <listitem><para>
+       This option allows you to provide a password in a file for
+       accessing a remote rsync server. Note that this option
+       is only useful when accessing a rsync server using the
+       built in transport, not when using a remote shell as the
+       transport. The file must not be world readable. It should
+       contain just the password as a single line.
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>exclude</term>
+     <listitem><para>
+       Don't backup files matching this exclude pattern.
+       See 'EXCLUDE PATTERNS' in rsync(1) for details.
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>exclude-from</term>
+     <listitem><para>
+       Don't backup files matching the exclude patterns in the file.
+       See 'EXCLUDE PATTERNS' in rsync(1) for details.
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>include</term>
+     <listitem><para>
+       Backup files matching the include pattern even if a later exclude
+       pattern would prevent the file from beeing backed up.
+       See 'EXCLUDE PATTERNS' in rsync(1) for details.
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>include-from</term>
+     <listitem><para>
+       Backup files matching the include patterns in the file even if a
+       later exclude pattern would prevent the file from beeing backed up.
+       See 'EXCLUDE PATTERNS' in rsync(1) for details.
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>include-tree</term>
+     <listitem><para>
+       Automatically create include patterns for each element of the given
+       path. E.g. "include-tree /home/alice/project/webpage" would produce
+       include patterns for "/home", "/home/alice", "/home/alice/project"
+       and "home/alice/project/webpage".
+       See 'EXCLUDE PATTERNS' in rsync(1) why this is usefull.
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>cvs-exclude</term>
+     <listitem><para>
+       This is a useful shorthand for excluding a broad range
+       of files that you often don´t want to transfer between
+       systems. It uses the same algorithm that CVS uses to
+       determine if a file should be ignored.
+     </para><para>
+       Be careful with that option. It would prevent stuff like CVS
+       checkouts from beeing backed-up correctly.
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>system-exclude</term>
+     <listitem><para>
+       This is a useful shorthand for excluding the contents of the /tmp,
+       /dev, /proc, /sys and every lost+found/ directory as well as
+       excluding every .journal file.
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>compress</term>
+     <listitem><para>
+       Compress the network traffic.
+       See rsync(1) for details.
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>bwlimit</term>
+     <listitem><para>
+       Limit the bandwith the the given number of kilobytes per second.
+       See rsync(1) for details.
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>whole-file</term>
+     <listitem><para>
+       Transfer whole files instead of using the incremental rsync algorithm.
+       See rsync(1) for details.
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>rsh-command</term>
+     <listitem><para>
+       Use the given command instead of rsh when connecting to the remote host
+       using a remote shell protocol. Usually you want to set this to "ssh".
+     </para></listitem>
+   </varlistentry>
+   <varlistentry>
+     <term>rsync-option</term>
+     <listitem><para>
+       Append the specified option(s) to the rsync call. Use this with care!
+       See rsync(1) for details.
+     </para></listitem>
+   </varlistentry>
+ </variablelist>
+</refsect1>
+
+<refsect1>
+  <title>Backup Generations</title>
+  <para>
+    Backup Generations are "layers" of backups. E.g. many people make daily,
+    weekly and monthly backups. This would be three backup generations. The
+    "generations" tag in the backup configuration is used to specify how many
+    backup generations will be created. E.g.
+    <programlisting>
+	generations 10:7 5:4 12:0
+    </programlisting>
+    will create three backup generations. The first generation can hold no
+    more than 10 incremental backups. When the 11th backup is created, the
+    oldest backup expires and is eighter removed or moved to the next
+    generation. In this case every 7th backup which expires is moved to the
+    next backup generation. So if you make daily backups, the 2nd backup
+    generation will contain weekly snapshots and the 3rd generation will
+    contain snapshots for 4 weeks intervals (which is almost a month).
+  </para>
+  <para>
+    Note that the 2nd number for the last backup generation is ignored since
+    there is no upper-level generation where backups could be moved to.
+  </para>
+</refsect1>
+
+<refsect1>
+  <title>Setting up rsync on the backed-up host</title>
+  <para>
+    Create an /etc/rsync.conf file containing a section for the backup:
+    <programlisting>
+	[ backup ]
+	path = /
+	read only = yes
+	list = no
+	uid = root
+	gid = root
+	auth users = backup
+	secrets file = /etc/rsyncd.secrets
+	hosts allow = backup.example.com
+    </programlisting>
+    And add the user 'backup' and his password to the /etc/rsyncd.secrets
+    file (and make sure that only root can read that file):
+    <programlisting>
+	backup:secret
+    </programlisting>
+    Finally add rsyncd to your /etc/inetd.conf:
+    <programlisting>
+	rsync stream tcp nowait root /usr/bin/rsync rsyncd --daemon
+    </programlisting>
+  </para>
+  <para>
+    See rsync(1) for details on how to set up an rsync server.
+  </para>
+</refsect1>
+
+<refsect1>
+  <title>Secure Backups using SSH</title>
+  <para>
+    If you are making makups over the wild wild web (the public internet) or
+    any other unsecure links (like 99% of all office networks), you might
+    want to use an encrypted connection. One possible solution is running
+    rsync over ssh and authenticating using an ssh-key.
+  </para>
+  <para>
+    First you need to create an ssh-key on the backup host. This key will
+    late on be used to authenticate the backup host on the backed-up host:
+    <programlisting>
+	ssh-keygen -t dsa -N '' -f /etc/rsbak3_key
+    </programlisting>
+    Next we need to tell rsbak3 that it should use ssh for the connection
+    and use the key you've just created for authentication. Add the following
+    to the rsbak3 configuration
+    <programlisting>
+      rsh-command ssh -i /etc/rsbak3_key
+    </programlisting>
+    and make sure that you are not using the rsync protocol for connecting to
+    the backed-up host (one colon between host and directory, no rsync://).
+    See rsync(1) for details on the rsync path syntax.
+  </para>
+  <para>
+    Now the backed-up host. Instead of creating a /etc/rsyncd.conf and
+    enabling rsync to the inetd configuration, add the public key you've
+    created to the ~/.ssh/authorized_keys2 file of the user of your choice and
+    add the following options (see sshd(8) for details):
+    <programlisting>
+	from="backup.example.com",command="/usr/local/sbin/rsb3swr",no-pty,no-port-forwarding <replaceable>public-key-from-rsbak3_key.pub</replaceable>
+    </programlisting>
+    Note that in some cases you need to run rsyncd as root in order to read
+    all files on the filesystem - e.g. when doing a full backup of the
+    operating system.
+  </para>
+  <para>
+    Always test if it is only possible to run rsyncd using 'ssh -i
+    /etc/rsbak3_key'. E.g. logging in to a normal shell without a
+    password or transfering data to the host (i.e. wrong direction)
+    using rsync must not be possible!
+  </para>
+</refsect1>
+
+<refsect1>
+  <title>Backup Filesystem Structure</title>
+  <para>
+    rsbak3 creates subdirectories for all backups using the name specified
+    in the configuration file as directory name. Those directories contain
+    subdirectories "generation_0" to "generation_9" (they are created on
+    demand - so they might not all be present) containing the backups as well
+    as a symbolic link "latest" which points to the latest backup directory.
+    The backup directories are named after the exact time when they have been
+    created, using the format "YYYYMMDD-HHMMSS.bak". An example tree would be:
+    <programlisting>
+	/mnt/rsbak3
+		`- host1-home
+		|	`- generation_0
+		|	|	`- 20030909-030012.bak
+		|	|	`- 20030910-030011.bak
+		|	|	`- 20030911-030018.bak
+		|	|	`- 20030913-030009.bak
+		|	|	`- 20030914-030010.bak
+		|	|	`- 20030915-030012.bak
+		|	|	`- 20030916-030014.bak
+		|	|	`- 20030917-030008.bak
+		|	|	`- 20030918-030010.bak
+		|	|
+		|	`- generation_1
+		|	|	`- 20030901-030007.bak
+		|	|	`- 20030908-030011.bak
+		|	|
+		|	`- latest -> generation_0/20030909-030012.bak
+		|
+		`- host1-system
+		|	`- ...
+		|
+		`- host2
+			`- ...
+    </programlisting>
+  </para>
+</refsect1>
+
+<refsect1>
+  <title>Known Bugs</title>
+  <para>
+    By design, rsbak3 can not backup to filesystems which do not support
+    hard-links.
+  </para>
+  <para>
+    Also by design, rsbak3 is not very efficient (in terms of disk space
+    needs) for making backups of huge files which are often modified slightly,
+    like database files, log files or mbox files since rsbak3 is creating a
+    seperate copy of those files for every backup. Check if your database
+    has built-in support for incremental backups and if so, use it and exclude
+    the database files from your rsbak3 backup. Exclude logfiles from the
+    rsbak3 backup and archive the old logs when "roll over". And think about
+    switching from mbox to maildir for your mailboxes in order to keep the
+    diskusage overhead in your backup as small as possible.
+  </para>
+  <para>
+    It needs some testing if rsbak3 is compatibe with "rsync -H".
+  </para>
+</refsect1>
+
+<refsect1>
+  <title>Author</title>
+  <simpara>
+    Written by Clifford Wolf <email>clifford@clifford.at</email> at
+    <ulink url="http://www.linbit.com/">LINBIT Information Technologies</ulink>.
+  </simpara>
+  <simpara>
+    Original rsbak and rsbak2 have been written by Philipp Richter
+    <email>philipp.richter@linbit.com</email>.
+  </simpara>
+</refsect1>
+
+<refsect1>
+  <title>Reporting Bugs</title>
+  <simpara>
+    Report bugs to <email>opensource@linbit.com</email>.
+  </simpara>
+</refsect1>
+
+<refsect1>
+  <title>Copyright</title>
+  <simpara>
+    Copyright (c) 2003 Clifford Wolf. This is free software;
+    see the source for copying conditions. There is NO warranty;
+    not even for MERCHANTABILIT or FITNESS FOR A PARTICULAR PURPOSE.
+  </simpara>
+</refsect1>
+
+<refsect1>
+  <title>See Also</title>
+  <para>
+    <citerefentry>
+      <refentrytitle>rsync</refentrytitle>
+      <manvolnum>1</manvolnum>
+    </citerefentry>,
+    <citerefentry>
+      <refentrytitle>ssh</refentrytitle>
+      <manvolnum>1</manvolnum>
+    </citerefentry>,
+    <citerefentry>
+      <refentrytitle>mkreiserfs</refentrytitle>
+      <manvolnum>8</manvolnum>
+    </citerefentry>
+  </para>
+</refsect1>
+
+</refentry>
+
