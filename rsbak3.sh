@@ -13,17 +13,33 @@
 ver=0.2
 exec 2>&1
 
-if [ -z "$DONT_SHOW_RSBAK3_COPY" ]; then
-  echo
-  echo "RSBAK $ver is Copyright (C) 2003 LINBIT <http://www.linbit.com/>."
-  echo "Written by Clifford Wolf <clifford@clifford.at>."
-  echo "This is free software with ABSOLUTELY NO WARRANTY."
-  echo
+verbose=0
+if [ "$1" = "-v" ]; then
+	verbose=1; shift
 fi
+if [ -n "$RSBAK3_VERBOSE" ]; then
+	verbose=$RSBAK3_VERBOSE
+fi
+
+if [ $verbose = 1 ]; then
+	vecho() { echo "$@"; }
+else
+	vecho() { :; }
+fi
+
+if [ -z "$DONT_SHOW_RSBAK3_COPY" ]; then
+  vecho
+  vecho "RSBAK $ver is Copyright (C) 2003 LINBIT <http://www.linbit.com/>."
+  vecho "Written by Clifford Wolf <clifford@clifford.at>."
+  vecho "This is free software with ABSOLUTELY NO WARRANTY."
+  vecho
+fi
+
 export DONT_SHOW_RSBAK3_COPY=1
+export RSBAK3_VERBOSE=$verbose
 
 if [ -z "$1" -o ! -f "$1" ]; then
-	echo "Usage: $0 config-file [ config-name ]"
+	echo "Usage: $0 [-v] config-file [ config-name ]"
 	echo; exit 1
 fi
 
@@ -44,7 +60,7 @@ if [ "${2/\\*/}" != "$2" ]; then
 		fi
 	done
 	if [ $found -eq 0 ]; then
-		echo "Can't find configs matching >>$2<< in config file $1!"
+		echo "$2:$this: Can't find configs matching >>$2<< in config file $1!"
 		echo; exit 1
 	fi
 	exit $rc
@@ -66,7 +82,7 @@ current=""
 foundcfg=0
 
 this=$( date '+%Y%m%d-%H%M%S' )
-echo "[ $2:$this ]"
+vecho "[ $2:$this ]"
 
 # it's easier to use that var than escaping the character...
 t="'"
@@ -128,53 +144,60 @@ do
 	    '')
 		;;
 	    *)
-		echo "Syntax error in config file: $tag $value!"
+		echo "$2:$this: Syntax error in config file: $tag $value!"
 		echo; exit 1
 		;;
 	esac
 done < "$1"
 
 if [ $foundcfg = 0 ]; then
-	echo "Can't find config >>$2<< in config file $1!"
+	echo "$2:$this: Can't find config >>$2<< in config file $1!"
 	echo; exit 1
 fi
 
 if [ -z "$master" ]; then
-	echo "No >>master<< entry in config file!"
+	echo "$2:$this: No >>master<< entry in config file!"
 	echo; exit 1
 fi
 
 if [ -z "$backupdir" ]; then
-	echo "No >>backup-dir<< entry in config file!"
+	echo "$2:$this: No >>backup-dir<< entry in config file!"
 	echo; exit 1
 fi
 
 if [ -z "$generations" ]; then
-	echo "No >>generations<< entry in config file!"
+	echo "$2:$this: No >>generations<< entry in config file!"
 	echo; exit 1
 fi
 
-cd "$backupdir"             || { echo; exit 1; }
-mkdir -p "$2/generation_0"  || { echo; exit 1; }
-cd "$2/generation_0"        || { echo; exit 1; }
+cd "$backupdir"             || { echo "$2:$this: prepgen error #1"; echo; exit 1; }
+mkdir -p "$2/generation_0"  || { echo "$2:$this: prepgen error #2"; echo; exit 1; }
+cd "$2/generation_0"        || { echo "$2:$this: prepgen error #3"; echo; exit 1; }
 
 last=$( ls -d [0-9]*.bak 2> /dev/null | tail -1 )
 
 rm -rf "$this.new"
 if [ -d "$last" ]; then
-	echo "Preparing incremental backup using ${last%.bak} ..."
+	vecho "Preparing incremental backup using ${last%.bak} ..."
 	cp -al "$last" "$this.new"
 else
 	mkdir -p "$this.new"
 fi
 
-echo "Running rsync (output redirected to logfile) ..."
+vecho "Running rsync (output redirected to logfile) ..."
 
-eval 'rsync "$master" "$this.new" --archive -v --stats' \
+if ! eval 'rsync "$master" "$this.new" --archive -v --stats' \
 	'--delete-excluded --ignore-errors --delete' \
-	"$rsopt" > "$this.log" < /dev/null
+	"$rsopt" > $this.log < /dev/null
+then
+	echo "$2:$this: rsync returned an error, see $this.log:"
+	tail "$this.log"; echo; exit 1
+fi
 
-tail -2 "$this.log" | tr -s ' '
+if [ $verbose = 1 ]; then
+	tail -2 "$this.log" | tr -s ' '
+fi
+
 mv "$this.log" "$this.new/rsync.log"
 mv "$this.new" "$this.bak"
 
@@ -206,12 +229,12 @@ for gen in 0 1 2 3 4 5 6 7 8 9; do
 	do
 		(( gencount = $gencount + 1 ))
 		if [ $gencount -ge $rot -a $last -eq 0 ]; then
-			echo "Moving to next generation: [$gen] ${dir%.bak} ..."
+			vecho "Moving to next generation: [$gen] ${dir%.bak} ..."
 			mkdir -p ../generation_$next
 			mv $dir ../generation_$next/
 			gencount=0
 		else
-			echo "Removing outdated backup: [$gen] ${dir%.bak} ..."
+			vecho "Removing outdated backup: [$gen] ${dir%.bak} ..."
 			rm -rf $dir
 		fi
 	done
@@ -219,5 +242,5 @@ for gen in 0 1 2 3 4 5 6 7 8 9; do
 	echo $gencount > GENCOUNT
 done
 
-echo
+vecho
 
