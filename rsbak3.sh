@@ -183,24 +183,26 @@ then
 	echo; exit1
 fi
 
-if [ -f LOCKFILE ]; then
+set -C
+if ! echo "Already running with PID $$ [$0 $*]." > LOCKFILE
+then
 	echo "Found lockfile $PWD/LOCKFILE:"
 	errlog "Found lockfile $PWD/LOCKFILE"
 	cat LOCKFILE; echo; exit 1
 fi
-
-echo "Already running with PID $$ [$0 $*]." > LOCKFILE
+set +C
 trap "rm -f $PWD/LOCKFILE" EXIT
 
 last=$( ls -d [0-9]*.bak 2> /dev/null | tail -1 )
 
 rm -rf "$this.new"
+rsopt="$rsopt -O '--log-format=%i %9l %n%L'"
 if [ -d "$last" ]; then
 	vecho "Preparing incremental backup using ${last%.bak} ..."
-	cp -al "$last" "$this.new"
-else
-	mkdir -p "$this.new"
+	# cp -al "$last" "$this.new"
+	rsopt="$rsopt '--link-dest=$PWD/$last/'"
 fi
+#	mkdir -p "$this.new"
 
 vecho "Running rsync (output redirected to logfile) ..."
 
