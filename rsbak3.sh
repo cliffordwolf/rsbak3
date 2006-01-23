@@ -180,7 +180,7 @@ if ! cd "$backupdir" ||
 then
 	echo "$2:$this: Error while creating $backupdir/$2/generation_0"
 	errlog "$2:$this: Error while creating $backupdir/$2/generation_0"
-	echo; exit1
+	echo; exit 1
 fi
 
 set -C
@@ -199,10 +199,8 @@ rm -rf "$this.new"
 rsopt="$rsopt -O '--log-format=%i %9l %n%L'"
 if [ -d "$last" ]; then
 	vecho "Preparing incremental backup using ${last%.bak} ..."
-	# cp -al "$last" "$this.new"
 	rsopt="$rsopt '--link-dest=$PWD/$last/'"
 fi
-#	mkdir -p "$this.new"
 
 vecho "Running rsync (output redirected to logfile) ..."
 
@@ -211,22 +209,23 @@ vecho "Running rsync (output redirected to logfile) ..."
 
 eval 'rsync "$master" "$this.new" --archive -v --stats' \
 	'--delete-excluded --ignore-errors --delete' \
-	"$rsopt" > $this.log < /dev/null
+	"$rsopt" > $this.log 2> $this.err < /dev/null
 rsync_rc=$?
 
 # ignore error 24 = Partial transfer due to vanished source files
 if [ $rsync_rc != 0 -a $rsync_rc != 24 ]
 then
-	echo "$2:$this: rsync returned an error, see $this.log:"
-	errlog "$2:$this: rsync returned an error, see $this.log:"
-	tail "$this.log"; echo; exit 1
+	echo "$2:$this: rsync returned an error, see $this.log and $this.err:"
+	errlog "$2:$this: rsync returned an error, see $this.log and $this.err."
+	echo; tail "$this.log" "$this.err"; echo; exit 1
 fi
 
 if [ $verbose = 1 ]; then
-	tail -2 "$this.log" | tr -s ' '
+	tail -n2 "$this.log" | tr -s ' '
 fi
 
 mv "$this.log" "$this.new/rsync.log"
+mv "$this.err" "$this.new/rsync.err"
 mv "$this.new" "$this.bak"
 
 rm -f ../latest
