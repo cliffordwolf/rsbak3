@@ -212,21 +212,24 @@ eval 'rsync "$master" "$this.new" --archive -v --stats' \
 	"$rsopt" > $this.log 2> $this.err < /dev/null
 rsync_rc=$?
 
+mv "$this.log" "$this.new/rsync.log"
+mv "$this.err" "$this.new/rsync.err"
+
 # ignore error 23 = Partial transfer due to error
 # ignore error 24 = Partial transfer due to vanished source files
 if [ $rsync_rc != 0 -a $rsync_rc != 23 -a $rsync_rc != 24 ]
 then
-	echo "$2:$this: rsync returned error $rsync_rc, see $this.log and $this.err:"
-	errlog "$2:$this: rsync returned error $rsync_rc, see $this.log and $this.err."
-	echo; tail "$this.log" "$this.err"; echo; exit 1
+	mv "$this.new" "$this.failed"
+	echo "$2:$this: rsync returned error $rsync_rc, see $this.failed/rsync.{log,err}:"
+	errlog "$2:$this: rsync returned error $rsync_rc, see $this.failed/rsync.{log,err}:"
+	echo; tail "$this.failed/rsync.log" "$this.failed/rsync.err"; echo
+	exit 1
 fi
 
 if [ $verbose = 1 ]; then
-	tail -n2 "$this.log" | tr -s ' '
+	tail -n2 "$this.new/rsync.log" | tr -s ' '
 fi
 
-mv "$this.log" "$this.new/rsync.log"
-mv "$this.err" "$this.new/rsync.err"
 mv "$this.new" "$this.bak"
 
 rm -f ../latest
