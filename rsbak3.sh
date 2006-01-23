@@ -212,11 +212,12 @@ eval 'rsync "$master" "$this.new" --archive -v --stats' \
 	"$rsopt" > $this.log 2> $this.err < /dev/null
 rsync_rc=$?
 
+# ignore error 23 = Partial transfer due to error
 # ignore error 24 = Partial transfer due to vanished source files
-if [ $rsync_rc != 0 -a $rsync_rc != 24 ]
+if [ $rsync_rc != 0 -a $rsync_rc != 23 -a $rsync_rc != 24 ]
 then
-	echo "$2:$this: rsync returned an error, see $this.log and $this.err:"
-	errlog "$2:$this: rsync returned an error, see $this.log and $this.err."
+	echo "$2:$this: rsync returned error $rsync_rc, see $this.log and $this.err:"
+	errlog "$2:$this: rsync returned error $rsync_rc, see $this.log and $this.err."
 	echo; tail "$this.log" "$this.err"; echo; exit 1
 fi
 
