@@ -40,11 +40,28 @@ while (<>) {
 
 exit 1 unless defined %s;
 
+# I could not decide between dot and comma.
+# besides, using underscore has the additional effect
+# of not changing the perl numerical value...
+#
+sub add_1000sep($) {
+	my $s = $_[0];
+	return $s unless $s =~ /^\d+$/s;
+	1 while $s =~ s/(\d)(\d\d\d)(,|$)/${1},$2/;
+	# 1 while $s =~ s/(\d)(\d\d\d)(\.|$)/${1}.$2/;
+	# 1 while $s =~ s/(\d)(\d\d\d)(_|$)/${1}_$2/;
+	return $s;
+};
+
 print "\nTOTALs (unit kilo byte)\n";
 for $dir (sort { $s{$b}->{"\0TOTAL"} <=> $s{$a}->{"\0TOTAL"} } keys %s) {
-	printf "%9d %-20s %s\n",$s{$dir}->{"\0TOTAL"}, split "/",$dir,2;
-	printf "%9d in %d dirs\n\n",
-		$s{$dir}->{"\0dir_space"}, $s{$dir}->{"\0directories"};
+	printf "%12s %-20s %s\n",add_1000sep($s{$dir}->{"\0TOTAL"}), split "/",$dir,2;
+	if ($s{$dir}->{"\0directories"}) {
+		printf "%12s in %d dirs\n\n",
+			add_1000sep($s{$dir}->{"\0dir_space"}), $s{$dir}->{"\0directories"};
+	} else {
+		printf "%12s no directories\n\n", "";
+	}
 }
 for $dir (sort { $s{$b}->{"\0TOTAL"} <=> $s{$a}->{"\0TOTAL"} } keys %s) {
 	print "\n$dir\n",
@@ -52,14 +69,14 @@ for $dir (sort { $s{$b}->{"\0TOTAL"} <=> $s{$a}->{"\0TOTAL"} } keys %s) {
 #	printf "%9d TOTAL\n",$s{$dir}->{"\tTOTAL"};
 	$c = 0;
 	if (not exists $s{$dir}->{"\tTOTAL kB file data"}) {
-		printf "%9d No files transfered -- nothing changed\n", 0;
+		printf "%12s No files transfered -- nothing changed\n", 0;
 		next;
 	}
 
 	for (sort { $s{$dir}->{$b} <=> $s{$dir}->{$a} or $a cmp $b } keys %{$s{$dir}}) {
 		next if /^\0/;
 		last if ++$c > 50;
-		printf "%9d %s\n", $s{$dir}->{$_}, $_
+		printf "%12s %s\n", add_1000sep($s{$dir}->{$_}), $_
 	};
 }
 
