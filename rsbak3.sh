@@ -12,6 +12,7 @@
 
 ver=0.2
 exec 2>&1
+umask 007 # logfiles should not be readable by "anyone"
 
 verbose=0
 if [ "$1" = "-v" ]; then

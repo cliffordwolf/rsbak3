@@ -19,6 +19,7 @@ install:
 	install  -m 755 rsb3swr.sh    /usr/local/sbin/rsb3swr
 	install  -m 755 rsbak3diff.sh /usr/local/sbin/rsbak3diff
 	install  -m 755 rsbak3dump.sh /usr/local/sbin/rsbak3dump
+	install  -m 755 rsbak3logsum.pl /usr/local/sbin/rsbak3logsum.pl
 	-install -m 644 rsbak3.man    /usr/local/man/man8/rsbak3.8
 
 clean:
