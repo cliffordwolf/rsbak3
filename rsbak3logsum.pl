@@ -7,6 +7,12 @@ my $dir = $default_dir;
 # or guess fs-blocksize from first directory entry?
 sub round_up($) { int(($_[0]+4095)/4096)*4 }
 
+my $cutoff = 50;
+if ($ARGV[0] =~ /^--cut=(\d+)$/) {
+	$cutoff = $1;
+	shift;
+}
+
 if (@ARGV == 1 and -d $ARGV[0]) {
 	$dir = shift;
 }
@@ -75,7 +81,7 @@ for $dir (sort { $s{$b}->{"\0TOTAL"} <=> $s{$a}->{"\0TOTAL"} } keys %s) {
 
 	for (sort { $s{$dir}->{$b} <=> $s{$dir}->{$a} or $a cmp $b } keys %{$s{$dir}}) {
 		next if /^\0/;
-		last if ++$c > 50;
+		last if ++$c > $cutoff;
 		printf "%12s %s\n", add_1000sep($s{$dir}->{$_}), $_
 	};
 }
