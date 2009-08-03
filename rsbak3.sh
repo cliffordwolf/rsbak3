@@ -56,7 +56,7 @@ if [ ! -z "$3" ]; then
 	exit $rc
 fi
 
-if [ "${2/\\*/}" != "$2" ]; then
+if [ "${2/\*/}" != "$2" ]; then
 	rc=0; found=0
 	for cfg in $( grep '^\[' "$1" | tr -d '[]' | grep -v '\*' ); do
 		if [[ "$cfg" == $2 ]]; then
