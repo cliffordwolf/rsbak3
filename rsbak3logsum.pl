@@ -2,15 +2,38 @@
 my $default_dir = "/mnt/backup/rsbak3";
 my $dir = $default_dir;
 
-# round up to full 4k blocks
-# maybe command line option ???
-# or guess fs-blocksize from first directory entry?
-sub round_up($) { int(($_[0]+4095)/4096)*4 }
-
 my $cutoff = 50;
-if ($ARGV[0] =~ /^--cut=(\d+)$/) {
-	$cutoff = $1;
-	shift;
+my ($inode_dize, $dir_size, $block_size) = (4096, 4096, 4096);
+
+# round up to full blocks
+sub round_up_dir($) {
+	$_[0] > $inode_size
+	? int(($_[0]+$dir_size-1)/$dir_size)*$dir_size
+	: int(($_[0]+$inode_size-1)/$inode_size)*$inode_size
+}
+sub round_up_file($) {
+	int(($_[0]+$block_size-1)/$block_size)*$block_size
+}
+
+# use getopt or similar?
+for (@ARGV) {
+	/^--cut=(\d+)$/ and do {
+		$cutoff = $1;
+		shift;
+		}, next;
+	/^--bsz=(\d+)$/ and do {
+		$inode_size = $dir_size = $block_size = $1;
+		shift;
+		}, next;
+	/^--dsz=(\d+)$/ and do {
+		$dir_size = $1;
+		shift;
+		}, next;
+	/^--isz=(\d+)$/ and do {
+		$inode_size = $1;
+		shift;
+		}, next;
+	last;
 }
 
 if (@ARGV == 1 and -d $ARGV[0]) {
@@ -29,19 +52,26 @@ unless (@ARGV) {
 };
 
 while (<>) {
+	close ARGV if eof ARGV;
 	# care for directories ?
 	($s,$f) = /^.[d]\S+\s+(\d+) (.+)$/ and do {
-		$s = round_up $s;
+		$s = round_up_dir $s;
 		$s{$ARGV}->{"\0TOTAL"} += $s;
 		$s{$ARGV}->{"\0dir_space"} += $s;
 		$s{$ARGV}->{"\0directories"} ++;
 		next;
 	};
+	/^TOTAL TIME: (\d+) s/ and do {
+		# if ARGV happens to be -, it may occur several times
+		$s{$ARGV}->{"\0TOTAL TIME"} += $1; 
+		next;
+	};
 	($s,$f) = /^.[f]\S+\s+(\d+) (.+)$/ or next;
-	$s = round_up $s;
+	$s = round_up_file $s;
 	$s{$ARGV}->{"\0TOTAL"} += $s;
-	$s{$ARGV}->{"\tTOTAL kB file data"} += $s;
-	do { $s{$ARGV}->{$f}+=$s; } while $f =~ s:/[^/]*$::;
+	$s{$ARGV}->{"\tTOTAL file data"} += $s;
+	$s{$ARGV}->{$f} = $s;
+	while ($f =~ s:/[^/]*$::) { $s{$ARGV}->{"$f/"} += $s; }
 }
 
 exit 1 unless defined %s;
@@ -58,13 +88,24 @@ sub add_1000sep($) {
 	# 1 while $s =~ s/(\d)(\d\d\d)(_|$)/${1}_$2/;
 	return $s;
 };
+sub pretty_size($) { return add_1000sep(round_up_file($_[0])/1024) }
 
-print "\nTOTALs (unit kilo byte)\n";
+printf "\n%12s %-20s %8s\n", "TOTALs   KiB", "", "HH:MM:SS";
 for $dir (sort { $s{$b}->{"\0TOTAL"} <=> $s{$a}->{"\0TOTAL"} } keys %s) {
-	printf "%12s %-20s %s\n",add_1000sep($s{$dir}->{"\0TOTAL"}), split "/",$dir,2;
+	my $t = $s{$dir}->{"\0TOTAL TIME"};
+	my $pretty_time =
+		defined $t ?
+			$t >= 3600 ? sprintf "%u:%02u:%02u", ($t / 3600), (($t % 3600) / 60), ($t % 60) :
+			$t >=   60 ? sprintf "%u:%02u", $t / 60, $t % 60 :
+				     sprintf "%u", $t :
+		"";
+	my ($base, $tail) = split "/",$dir,2;
+	printf "%12s %-20s %8s %s\n",
+		pretty_size($s{$dir}->{"\0TOTAL"}),
+		$base, $pretty_time, $tail;
 	if ($s{$dir}->{"\0directories"}) {
 		printf "%12s in %d dirs\n\n",
-			add_1000sep($s{$dir}->{"\0dir_space"}), $s{$dir}->{"\0directories"};
+			pretty_size($s{$dir}->{"\0dir_space"}), $s{$dir}->{"\0directories"};
 	} else {
 		printf "%12s no directories\n\n", "";
 	}
@@ -74,7 +115,7 @@ for $dir (sort { $s{$b}->{"\0TOTAL"} <=> $s{$a}->{"\0TOTAL"} } keys %s) {
 	"=" x 66, "\n";
 #	printf "%9d TOTAL\n",$s{$dir}->{"\tTOTAL"};
 	$c = 0;
-	if (not exists $s{$dir}->{"\tTOTAL kB file data"}) {
+	if (not exists $s{$dir}->{"\tTOTAL file data"}) {
 		printf "%12s No files transfered -- nothing changed\n", 0;
 		next;
 	}
@@ -82,7 +123,7 @@ for $dir (sort { $s{$b}->{"\0TOTAL"} <=> $s{$a}->{"\0TOTAL"} } keys %s) {
 	for (sort { $s{$dir}->{$b} <=> $s{$dir}->{$a} or $a cmp $b } keys %{$s{$dir}}) {
 		next if /^\0/;
 		last if ++$c > $cutoff;
-		printf "%12s %s\n", add_1000sep($s{$dir}->{$_}), $_
+		printf "%12s %s\n", pretty_size($s{$dir}->{$_}), $_
 	};
 }
 

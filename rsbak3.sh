@@ -208,10 +208,16 @@ vecho "Running rsync (output redirected to logfile) ..."
 # vecho "rsync '$master' '$this.new' --archive -v --stats" \
 #       "--delete-excluded --ignore-errors --delete $rsopt"
 
+# magic bash $SECONDS
+START_TIME=$SECONDS
+date "+STARTED: %F %T" > $this.log
 eval 'rsync "$master" "$this.new" --archive -v --stats' \
 	'--delete-excluded --ignore-errors --delete' \
-	"$rsopt" > $this.log 2> $this.err < /dev/null
+	"$rsopt" >> $this.log 2> $this.err < /dev/null
 rsync_rc=$?
+TOTAL_TIME=$[SECONDS - START_TIME]
+date "+FINISHED: %F %T" >> $this.log
+echo "TOTAL TIME: $TOTAL_TIME s" >> $this.log
 
 # ignore error 23 = Partial transfer due to error
 # ignore error 24 = Partial transfer due to vanished source files
