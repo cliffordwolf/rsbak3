@@ -16,7 +16,8 @@ sub round_up_file($) {
 }
 
 # use getopt or similar?
-for (@ARGV) {
+while (@ARGV) {
+	$_ = $ARGV[0];
 	/^--cut=(\d+)$/ and do {
 		$cutoff = $1;
 		shift;
