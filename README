@@ -1,0 +1,29 @@
+
+rsbak3 -- Rsync Backup (Version 3)
+
+rsbak3 [-v] {config-file} [config-name...]
+
+The rsbak3 command can be used to backup one host to another
+hosts harddisc using rsync. In addition to just using rsync to
+keep two filesystems in sync, rsbak3 is doing incremental
+backups and saves multi-generational history data.
+
+When rsync is syncing a file, it is re-creating the file under
+a 2nd name and moving it over the original name - so it's
+"unlinking" hardlinks. rsbak3 is taking advantage of this for
+making incremental backups: The old backup is "link-copied" to
+a new location (see "cp -al") and then this copy of the
+backup-tree is rsynced. So all files which have been modified
+get unlinked an re-created and all files which have been
+removed will get unlinked in the new tree - but everything
+which is left unmodified will stay linked to the original
+backup and so doesn't need any additional disc space.
+
+[ .... ]
+
+Run "make doc" to build the documentation. Various formats
+are generated, but "rsbak3.pdf" is the prettiest.
+
+On Debian you need to "apt-get install docbook docbook-utils"
+to install the docbook utilities used by "make doc".
+
