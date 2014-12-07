@@ -25,13 +25,13 @@
  <title>Introduction</title>
  <para>
    The rsbak3 command can be used to backup one host to another hosts
-   harddisc using rsync. In addition to just using rsync to keep two
+   hard disk using rsync. In addition to just using rsync to keep two
    filesystems in sync, rsbak3 is doing incremental backups and saves
    multi-generational history data.
  </para>
  <para>
    When rsync is syncing a file, it is re-creating the file under a 2nd
-   name and moving it over the original name - so it's "unlinking" hardlinks.
+   name and moving it over the original name - so it's "unlinking" hard links.
    rsbak3 is taking advantage of this for making incremental backups: The
    old backup is "link-copied" to a new location (see "cp -al") and then
    this copy of the backup-tree is rsynced. So all files which have been
@@ -41,10 +41,10 @@
    disc space.
  </para>
  <para>
-   Of course this does backup hardlinks on the original filesystem as seperate
+   Of course this does backup hard links on the original file system as separate
    files on the backup machine. rsbak3 needs to run as root if all the file
    permissions should be backed up correctly. In this case I recommend making
-   the directory tree in which the backup is stored root-only accessable to
+   the directory tree in which the backup is stored root-only accessible to
    avoid troubles caused by different uid/gid schemas on the backup host and
    the backed-up host.
  </para>
@@ -65,7 +65,7 @@
    An rsbak3 configuration file contains one or more sections about filesystems
    which should be backed up. Those sections start with a line containing a
    backup-name in brackets (spaces between the name and the brackets are
-   matadory). A section can match multiple backup-names usind the * wildcard
+   mandatory). A section can match multiple backup-names using the * wildcard
    (e.g. host1/*). See this example /etc/rsbak3.conf file:
    <programlisting>
 	[ * ]
@@ -130,7 +130,7 @@
      <listitem><para>
        This is the local directory the backup is stored to. rsbak3 will create
        sub-directories with the backup-names as stored in the configuration
-       file here and create the backups themself within those subdirectories.
+       file here and create the backups them self within those subdirectories.
      </para></listitem>
    </varlistentry>
    <varlistentry>
@@ -146,7 +146,7 @@
      <listitem><para>
        The password which should be used when connecting using the rsync
        protocol. This is not used when connecting using rsh, ssh or any other
-       remote shell. This tag will set the RSYNC_PASSWORD evironment variable
+       remote shell. This tag will set the RSYNC_PASSWORD environment variable
        for the rsync process; see rsync(1) for details.
      </para><para>
        If you are using this configuration tag, the password will be stored
@@ -183,7 +183,7 @@
      <term>include</term>
      <listitem><para>
        Backup files matching the include pattern even if a later exclude
-       pattern would prevent the file from beeing backed up.
+       pattern would prevent the file from being backed up.
        See 'EXCLUDE PATTERNS' in rsync(1) for details.
      </para></listitem>
    </varlistentry>
@@ -191,7 +191,7 @@
      <term>include-from</term>
      <listitem><para>
        Backup files matching the include patterns in the file even if a
-       later exclude pattern would prevent the file from beeing backed up.
+       later exclude pattern would prevent the file from being backed up.
        See 'EXCLUDE PATTERNS' in rsync(1) for details.
      </para></listitem>
    </varlistentry>
@@ -202,19 +202,19 @@
        path. E.g. "include-tree /home/alice/project/webpage" would produce
        include patterns for "/home", "/home/alice", "/home/alice/project"
        and "home/alice/project/webpage".
-       See 'EXCLUDE PATTERNS' in rsync(1) why this is usefull.
+       See 'EXCLUDE PATTERNS' in rsync(1) why this is useful.
      </para></listitem>
    </varlistentry>
    <varlistentry>
      <term>cvs-exclude</term>
      <listitem><para>
        This is a useful shorthand for excluding a broad range
-       of files that you often don´t want to transfer between
+       of files that you often don't want to transfer between
        systems. It uses the same algorithm that CVS uses to
        determine if a file should be ignored.
      </para><para>
        Be careful with that option. It would prevent stuff like CVS
-       checkouts from beeing backed-up correctly.
+       checkouts from being backed-up correctly.
      </para></listitem>
    </varlistentry>
    <varlistentry>
@@ -235,7 +235,7 @@
    <varlistentry>
      <term>bwlimit</term>
      <listitem><para>
-       Limit the bandwith the the given number of kilobytes per second.
+       Limit the bandwidth to the given number of kilobytes per second.
        See rsync(1) for details.
      </para></listitem>
    </varlistentry>
@@ -256,7 +256,7 @@
    <varlistentry>
      <term>rsync-option</term>
      <listitem><para>
-       Append the specified option(s) to the rsync call. Use this with care!
+       Append the specified options to the rsync call. Use this with care!
        See rsync(1) for details.
      </para></listitem>
    </varlistentry>
@@ -275,7 +275,7 @@
     </programlisting>
     will create three backup generations. The first generation can hold no
     more than 10 incremental backups. When the 11th backup is created, the
-    oldest backup expires and is eighter removed or moved to the next
+    oldest backup expires and is either removed or moved to the next
     generation. In this case every 7th backup which expires is moved to the
     next backup generation. So if you make daily backups, the 2nd backup
     generation will contain weekly snapshots and the 3rd generation will
@@ -320,8 +320,8 @@
 <refsect1>
   <title>Secure Backups using SSH</title>
   <para>
-    If you are making makups over the wild wild web (the public internet) or
-    any other unsecure links (like 99% of all office networks), you might
+    If you are making backups over the wild wild web (the public internet) or
+    any other unsecured links (like 99% of all office networks), you might
     want to use an encrypted connection. One possible solution is running
     rsync over ssh and authenticating using an ssh-key.
   </para>
@@ -350,13 +350,13 @@
 	from="backup.example.com",command="/usr/local/sbin/rsb3swr",no-pty,no-port-forwarding <replaceable>public-key-from-rsbak3_key.pub</replaceable>
     </programlisting>
     Note that in some cases you need to run rsyncd as root in order to read
-    all files on the filesystem - e.g. when doing a full backup of the
+    all files on the file system - e.g. when doing a full backup of the
     operating system.
   </para>
   <para>
     Always test if it is only possible to run rsyncd using 'ssh -i
     /etc/rsbak3_key'. E.g. logging in to a normal shell without a
-    password or transfering data to the host (i.e. wrong direction)
+    password or transferring data to the host (i.e. wrong direction)
     using rsync must not be possible!
   </para>
 </refsect1>
@@ -365,11 +365,11 @@
   <title>Backing up Databases</title>
   <para>
     Rsbak3 can also be used to back up databases using database dumps and
-    xdelta. This reuires xdelta and a gzip with support for the --rsyncable
-    option to be installed on the host beeing backed up. An additional small
-    shell script (rsbak3dump) is used on the host beeing backed up to create
+    xdelta. This requires xdelta and a gzip with support for the --rsyncable
+    option to be installed on the host being backed up. An additional small
+    shell script (rsbak3dump) is used on the host being backed up to create
     and maintain a directory containing a current database dump and xdeltas
-    to earlier dumps. A cron-job must be set up to do this, somthing like:
+    to earlier dumps. A cron-job must be set up to do this, something like:
     <programlisting>
 	0 2 * * * mysql rsbak3dump 'mysqldump test' /var/backups/testdb 15
     </programlisting>
@@ -378,14 +378,14 @@
     contain the dumped data and the 3rd parameter is the number of xdeltas
     which should be kept in the directory. Keep care that rsbak3dump has
     finished before rsbak3 is backing up the directory! Just for the case that
-    rsbak3 is running simultaneous with rsbak3dump, it is reccomended to
+    rsbak3 is running simultaneous with rsbak3dump, it is recommended to
     exclude *.tmp in the rsbak3 configuration for the dump directory.
   </para>
   <para>
-    The trick with rsbak3dump is that the directory which is beeing backed up
+    The trick with rsbak3dump is that the directory which is being backed up
     provides already some kind of 'history information' with the xdeltas stored
     there. So there is no need to keep multiple 1st generation backups on the
-    backup server. Insted the top-level generation keeps only one concurrent
+    backup server. Instead the top-level generation keeps only one concurrent
     backup which contains the current dump and the xdeltas. So the generations
     entry on the server for the dumps would look like:
     <programlisting>
@@ -443,8 +443,8 @@
   <para>
     The additional tool rsbak3diff can be used to list the files which
     have been modified, added or removed between two backups. This can be
-    very usefull to find out which part of the backup eats up all your
-    diskspace.
+    very useful to find out which part of the backup eats up all your
+    disk space.
   </para>
 </refsect1>
 
@@ -458,15 +458,15 @@
     Also by design, rsbak3 is not very efficient (in terms of disk space
     needs) for making backups of huge files which are often modified slightly,
     like database files, log files or mbox files since rsbak3 is creating a
-    seperate copy of those files for every backup. Check if your database
+    separate copy of those files for every backup. Check if your database
     has built-in support for incremental backups and if so, use it and exclude
-    the database files from your rsbak3 backup. Exclude logfiles from the
+    the database files from your rsbak3 backup. Exclude log files from the
     rsbak3 backup and archive the old logs when "roll over". And think about
     switching from mbox to maildir for your mailboxes in order to keep the
-    diskusage overhead in your backup as small as possible.
+    disk usage overhead in your backup as small as possible.
   </para>
   <para>
-    It needs some testing if rsbak3 is compatibe with "rsync -H".
+    It needs some testing if rsbak3 is compatible with "rsync -H".
   </para>
 </refsect1>
 
@@ -494,7 +494,7 @@
   <simpara>
     Copyright (c) 2003 Clifford Wolf. This is free software;
     see the source for copying conditions. There is NO warranty;
-    not even for MERCHANTABILIT or FITNESS FOR A PARTICULAR PURPOSE.
+    not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
   </simpara>
 </refsect1>
 
