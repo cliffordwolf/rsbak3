@@ -49,12 +49,6 @@
    the backed-up host.
  </para>
  <para>
-   It's reccommended to store the backups made with rsbak3 on a filesystem
-   which supports tail-merging small directories since the directories themself
-   can't be hardlinked but need to be copied for every history version.
-   Reiserfs is such a filesystem; ext2 isn't.
- </para>
- <para>
    Making backups using rsbak3 is rather easy: A configuration file contains
    the definitions (rsync urls, exclude/include rules, etc.) for one or more
    filesystems which should be backed up. rsbak3 is taking the name of this
@@ -514,10 +508,6 @@
     <citerefentry>
       <refentrytitle>ssh</refentrytitle>
       <manvolnum>1</manvolnum>
-    </citerefentry>,
-    <citerefentry>
-      <refentrytitle>mkreiserfs</refentrytitle>
-      <manvolnum>8</manvolnum>
     </citerefentry>
   </para>
 </refsect1>
